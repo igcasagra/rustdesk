@@ -2350,7 +2350,24 @@ pub fn rustdesk_interval(i: Interval) -> ThrottledInterval {
     ThrottledInterval::new(i)
 }
 
+fn load_builtin_server_defaults() {
+    let mut defaults = config::DEFAULT_SETTINGS.write().unwrap();
+    for (key, value) in [
+        (
+            keys::OPTION_CUSTOM_RENDEZVOUS_SERVER,
+            option_env!("RENDEZVOUS_SERVER"),
+        ),
+        (keys::OPTION_KEY, option_env!("RS_PUB_KEY")),
+        (keys::OPTION_API_SERVER, option_env!("API_SERVER")),
+    ] {
+        if let Some(value) = value.filter(|v| !v.is_empty()) {
+            defaults.insert(key.to_owned(), value.to_owned());
+        }
+    }
+}
+
 pub fn load_custom_client() {
+    load_builtin_server_defaults();
     #[cfg(debug_assertions)]
     if let Ok(data) = std::fs::read_to_string("./custom.txt") {
         read_custom_client(data.trim());
